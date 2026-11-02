@@ -4,32 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Abriendo Google Sheets</title>
-</head>
-<body style="font-family:sans-serif;padding:24px">
-<p id="m">Abriendo Google Sheets...</p>
 <script>
 // Puente: abre una hoja de Google en la app de Sheets (Android).
 // Uso: /calengoo/sheets/?id=<id de la hoja>&gid=<pestaña, opcional>
-const m = document.getElementById('m');
-const p = new URLSearchParams(location.search);
-// Solo acepta ids y gid con forma válida, para no abrir cualquier cosa
-const id = /^[A-Za-z0-9_-]{20,80}$/.test(p.get('id') || '') ? p.get('id') : '';
-const gid = /^\d{1,12}$/.test(p.get('gid') || '') ? p.get('gid') : '';
-if (!id) {
-  m.textContent = 'Falta el id de la hoja.';
-} else {
+// Va en el <head> para intentar abrir Sheets lo antes posible.
+(function () {
+  var p = new URLSearchParams(location.search);
+  // Solo acepta ids y gid con forma válida, para no abrir cualquier cosa
+  var id = /^[A-Za-z0-9_-]{20,80}$/.test(p.get('id') || '') ? p.get('id') : '';
+  var gid = /^\d{1,12}$/.test(p.get('gid') || '') ? p.get('gid') : '';
+  window.HOJA = null;
+  if (!id) return;
   // Ruta de la hoja (con ?gid para no chocar con el # del intent)
-  const ruta = 'docs.google.com/spreadsheets/d/' + id + '/edit' + (gid ? '?gid=' + gid : '');
-  const web = 'https://' + ruta;
+  var ruta = 'docs.google.com/spreadsheets/d/' + id + '/edit' + (gid ? '?gid=' + gid : '');
+  var web = 'https://' + ruta;
   // Intent: abre la app de Sheets; si no está instalada, abre la web
-  location.href = 'intent://' + ruta +
+  var intent = 'intent://' + ruta +
     '#Intent;scheme=https;package=com.google.android.apps.docs.editors.sheets;' +
     'S.browser_fallback_url=' + encodeURIComponent(web) + ';end';
-  // Si en 2.5 segundos sigues aquí, sale el link manual
-  setTimeout(() => {
-    m.innerHTML = 'Si no se abrió, <a href="' + web + '">toca aquí</a>.';
-  }, 2500);
-}
+  window.HOJA = { web: web, intent: intent };
+  // Primer intento automático (a veces Android lo bloquea sin un toque)
+  location.replace(intent);
+})();
+</script>
+<style>
+  body { font-family: sans-serif; margin: 0; padding: 24px; text-align: center; }
+  a.btn { display: block; margin: 24px auto 12px; max-width: 320px; padding: 18px;
+          border-radius: 12px; background: #188038; color: #fff; font-size: 20px;
+          font-weight: 600; text-decoration: none; }
+  a.web { color: #1a73e8; font-size: 15px; }
+</style>
+</head>
+<body>
+<p id="m">Abriendo Google Sheets...</p>
+<!-- Botón: si no se abrió solo, tocarlo siempre funciona -->
+<a id="btn" class="btn" href="#" hidden>Abrir en Sheets</a>
+<a id="web" class="web" href="#" hidden>Abrir en el navegador</a>
+<script>
+  var m = document.getElementById('m');
+  if (!window.HOJA) {
+    m.textContent = 'Falta el id de la hoja.';
+  } else {
+    var b = document.getElementById('btn'), w = document.getElementById('web');
+    b.href = HOJA.intent; b.hidden = false;
+    w.href = HOJA.web; w.hidden = false;
+    m.textContent = 'Si no se abrió solo, toca el botón.';
+  }
 </script>
 </body>
 </html>

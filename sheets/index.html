@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abriendo Google Sheets</title>
+</head>
+<body style="font-family:sans-serif;padding:24px">
+<p id="m">Abriendo Google Sheets...</p>
+<script>
+// Puente: abre una hoja de Google en la app de Sheets (Android).
+// Uso: /calengoo/sheets/?id=<id de la hoja>&gid=<pestaña, opcional>
+const m = document.getElementById('m');
+const p = new URLSearchParams(location.search);
+// Solo acepta ids y gid con forma válida, para no abrir cualquier cosa
+const id = /^[A-Za-z0-9_-]{20,80}$/.test(p.get('id') || '') ? p.get('id') : '';
+const gid = /^\d{1,12}$/.test(p.get('gid') || '') ? p.get('gid') : '';
+if (!id) {
+  m.textContent = 'Falta el id de la hoja.';
+} else {
+  // Ruta de la hoja (con ?gid para no chocar con el # del intent)
+  const ruta = 'docs.google.com/spreadsheets/d/' + id + '/edit' + (gid ? '?gid=' + gid : '');
+  const web = 'https://' + ruta;
+  // Intent: abre la app de Sheets; si no está instalada, abre la web
+  location.href = 'intent://' + ruta +
+    '#Intent;scheme=https;package=com.google.android.apps.docs.editors.sheets;' +
+    'S.browser_fallback_url=' + encodeURIComponent(web) + ';end';
+  // Si en 2.5 segundos sigues aquí, sale el link manual
+  setTimeout(() => {
+    m.innerHTML = 'Si no se abrió, <a href="' + web + '">toca aquí</a>.';
+  }, 2500);
+}
+</script>
+</body>
+</html>
